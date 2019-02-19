@@ -25,4 +25,10 @@ private static final Logger log = LoggerFactory.getLogger(PlanetaServiceImpl.cla
 		return Optional.ofNullable(planetaRepository.findByNome(nome));
 	}
 
+	@Override
+	public Planeta salvarPlaneta(Planeta planeta) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

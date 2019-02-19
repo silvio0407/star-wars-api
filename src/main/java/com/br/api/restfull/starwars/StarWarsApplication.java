@@ -13,18 +13,18 @@ import com.google.gson.Gson;
 import com.mashape.unirest.http.Unirest;
 
 @SpringBootApplication
-public class StarWarsApplication implements CommandLineRunner {
+public class StarWarsApplication /*implements CommandLineRunner*/ {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(StarWarsApplication.class);
 	
-	@Autowired
-    private PlanetaService planetaService;
+	/*@Autowired
+    private PlanetaService planetaService;*/
 
 	public static void main(String[] args) {
 		SpringApplication.run(StarWarsApplication.class, args);
 	}
 	
-	@Override
+	/*@Override
     public void run(String... strings) throws Exception {
 
         Planeta planeta;
@@ -44,6 +44,6 @@ public class StarWarsApplication implements CommandLineRunner {
            System.out.println(planetString);
         }
 
-    } 
+    } */
 	 
 }

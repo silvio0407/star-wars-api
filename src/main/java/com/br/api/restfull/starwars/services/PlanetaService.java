@@ -13,4 +13,6 @@ public interface PlanetaService {
 	 * @return Optional<Planeta>
 	 */
 	Optional<Planeta> buscarPorNome(String nome);
+	
+	Planeta salvarPlaneta(Planeta planeta);
 }

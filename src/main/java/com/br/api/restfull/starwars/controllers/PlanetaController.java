@@ -1,5 +1,6 @@
 package com.br.api.restfull.starwars.controllers;
 
+import java.net.URI;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -8,8 +9,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.br.api.restfull.starwars.dto.PlanetaDto;
 import com.br.api.restfull.starwars.model.Planeta;
@@ -48,6 +53,25 @@ public class PlanetaController {
 		response.setData(this.converterPlanetaDto(planeta.get()));
 		return ResponseEntity.ok(response);
 	}
+	
+	 /**
+     * New Planet
+     *
+     * @param newPlanet Novo platena no corpo da requisição
+     * @return Retorna o Planeta criado com sua URI e o Status 201
+     */
+	@ResponseBody
+    @PostMapping
+    public ResponseEntity<Response<PlanetaDto>> newPlanet(@RequestBody Planeta newPlanet) {
+		
+		Response<PlanetaDto> response = new Response<PlanetaDto>();
+
+        Planeta planeta = planetaService.salvarPlaneta(newPlanet);
+
+        response.setData(this.converterPlanetaDto(planeta));
+        return ResponseEntity.ok(response);
+    }
+
 	
 	/**
 	 * Popula um DTO com os dados de um planeta.
