@@ -18,11 +18,11 @@ public interface PlanetaService {
 	
 	Optional<Planeta> buscarPorId(Long id);
 	
-	Planeta salvarPlaneta(PlanetaDto planeta);
+	Planeta salvarPlaneta(Planeta planeta);
 	
 	List<Planeta> consultarPlanetas();
 	
 	void removerPlaneta(Planeta planeta);
 	
-	Integer verificaPlanetaNaApiSwapi(String nome);
+	boolean verificarDuplicidadeNomePlaneta(String nomePlaneta);
 }

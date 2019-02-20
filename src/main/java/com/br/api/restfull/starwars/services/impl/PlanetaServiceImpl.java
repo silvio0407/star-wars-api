@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.br.api.restfull.starwars.dto.PlanetaDto;
+import com.br.api.restfull.starwars.exception.BusinessException;
 import com.br.api.restfull.starwars.exception.PlanetaNaoEncontradoException;
 import com.br.api.restfull.starwars.model.Planeta;
 import com.br.api.restfull.starwars.repositories.PlanetaRepository;
@@ -31,6 +32,8 @@ private static final Logger log = LoggerFactory.getLogger(PlanetaServiceImpl.cla
 	
 	private static final String MESSAGE_NOT_FOUND = "Não encontrado";
 	
+	private static final String API_SWAPI_INDISPONIVEL = "API SWAPI indisponível";
+	
 	@Override
 	public Optional<Planeta> buscarPorNome(String nome) {
 		log.info("Buscando um planeta pelo Nome {}", nome);
@@ -44,15 +47,25 @@ private static final Logger log = LoggerFactory.getLogger(PlanetaServiceImpl.cla
 	}
 
 	@Override
-	public Planeta salvarPlaneta(PlanetaDto planetaDto) {
+	public Planeta salvarPlaneta(Planeta planeta) {
 		
-		Integer aparicoes = verificaPlanetaNaApiSwapi(planetaDto.getNome());
-		Planeta planeta = converterPlaneta(planetaDto);
-		planeta.setQuantidadesAparicoes(aparicoes);
-		
-		planeta = planetaRepository.save(planeta);
+		if(!verificarDuplicidadeNomePlaneta(planeta.getNome())){
+			Integer aparicoes = verificaPlanetaNaApiSwapi(planeta.getNome());
+			/*Planeta novoPlaneta = converterPlaneta(planetaDto);*/
+			planeta.setQuantidadesAparicoes(aparicoes);
+			
+			planeta = planetaRepository.save(planeta);
+		}
 		
 		return planeta;
+	}
+	
+	@Override
+	public boolean verificarDuplicidadeNomePlaneta(String nomePlaneta){
+		
+		Optional<Planeta> planetaVerificado = buscarPorNome(nomePlaneta);
+		
+		return planetaVerificado.isPresent() ? true : false;
 	}
 	
 	@Override
@@ -67,8 +80,7 @@ private static final Logger log = LoggerFactory.getLogger(PlanetaServiceImpl.cla
 		planetaRepository.delete(planeta);
 	}
 	
-	@Override
-	public Integer verificaPlanetaNaApiSwapi(String nome) {
+	private Integer verificaPlanetaNaApiSwapi(String nome) {
 		
 		 Integer quantidadesAparicoes = 0;
 		
@@ -93,24 +105,11 @@ private static final Logger log = LoggerFactory.getLogger(PlanetaServiceImpl.cla
             
             quantidadesAparicoes = filmesJson.getJSONArray("films").length();
             
-		} catch (UnirestException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		} catch (UnirestException  | JSONException ex) {
+			throw new BusinessException(API_SWAPI_INDISPONIVEL);
 		}
 		 
 		return quantidadesAparicoes;
-	}
-	
-	private Planeta converterPlaneta(PlanetaDto planetaDto) {
-		Planeta planeta = new Planeta();
-		planeta.setNome(planetaDto.getNome());
-		planeta.setClima(planetaDto.getClima());
-		planeta.setTerreno(planetaDto.getTerreno());
-
-		return planeta;
 	}
 
 }

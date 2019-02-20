@@ -32,6 +32,14 @@ public class PlanetaController {
 	private static final Logger log = LoggerFactory.getLogger(PlanetaController.class);
 
 	private static final String PLANETA_NOT_FIND = "Planeta não localizado!";
+	
+	private static final String MSG_PLANETA_REMOVIDO_SUCESSO = "Planeta excluido com sucesso!";
+	
+	private static final String MSG_NOME_PLANETA_OBRIGATORIO = "Informe um nome para o novo Planeta!";
+	
+	private static final String MSG_ERRO_OBTER_LISTA_PLANETAS = "Ocorreu um erro ao obter a lista de Planetas.";
+	
+	private static final String MSG_CONFLITO_NOME_PLANETA = "Nao é permitido salvar novo planeta com um nome já existente no banco de dados."; 
 
 	@Autowired
     private PlanetaService planetaService;
@@ -43,9 +51,9 @@ public class PlanetaController {
 	 * @return ResponseEntity<Response<PlanetaDto>>
 	 */
 	@GetMapping
-	public ResponseEntity<Response<PlanetaDto>> buscarPorNome(@RequestParam("nome") String nome) {
+	public ResponseEntity<Response<Planeta>> buscarPorNome(@RequestParam("nome") String nome) {
 		log.info("Buscando planeta pelo Nome: {}", nome);
-		Response<PlanetaDto> response = new Response<PlanetaDto>();
+		Response<Planeta> response = new Response<Planeta>();
 		Optional<Planeta> planeta = planetaService.buscarPorNome(nome);
 
 		if (!planeta.isPresent()) {
@@ -54,14 +62,14 @@ public class PlanetaController {
 			return ResponseEntity.badRequest().body(response);
 		}
 
-		response.setData(this.converterPlanetaDto(planeta.get()));
+		response.setData(planeta.get());
 		return ResponseEntity.ok(response);
 	}
 	
 	@GetMapping(value = "/{id}")
-	public ResponseEntity<Response<PlanetaDto>> buscarPorId(@PathVariable("id") Long id) {
+	public ResponseEntity<Response<Planeta>> buscarPorId(@PathVariable("id") Long id) {
 		log.info("Buscando planeta pelo ID: {}", id);
-		Response<PlanetaDto> response = new Response<PlanetaDto>();
+		Response<Planeta> response = new Response<Planeta>();
 		Optional<Planeta> planeta = planetaService.buscarPorId(id);
 
 		if (!planeta.isPresent()) {
@@ -70,7 +78,7 @@ public class PlanetaController {
 			return ResponseEntity.badRequest().body(response);
 		}
 
-		response.setData(this.converterPlanetaDto(planeta.get()));
+		response.setData(planeta.get());
 		return ResponseEntity.ok(response);
 	}
 	
@@ -83,15 +91,27 @@ public class PlanetaController {
      */
 	@ResponseBody
     @PostMapping
-    public ResponseEntity<Response<PlanetaDto>> adicionarPlaneta(@RequestBody PlanetaDto planetaDto) {
+    public ResponseEntity<Response<Planeta>> adicionarPlaneta(@RequestBody Planeta planeta) {
+		Response<Planeta> response = new Response<Planeta>();
 		
-		Response<PlanetaDto> response = new Response<PlanetaDto>();
+		if(validarNomePlaneta(planeta.getNome())){
+			response.getErrors().add(MSG_NOME_PLANETA_OBRIGATORIO);
+			return ResponseEntity.ok().body(response);
+		}
 
+		if(planetaService.verificarDuplicidadeNomePlaneta(planeta.getNome())){
+			response.getErrors().add(MSG_CONFLITO_NOME_PLANETA);
+			return ResponseEntity.ok().body(response);
+		}
+		
         try {
-        	Planeta planeta = planetaService.salvarPlaneta(planetaDto);
-        	response.setData(converterPlanetaDto(planeta));
+        	Planeta novoPlaneta = planetaService.salvarPlaneta(planeta);
+        	response.setData(novoPlaneta);
         }catch (PlanetaNaoEncontradoException e) {
-        	response.getErrors().add("Não foi possível salvar o Planeta com Nome " + planetaDto.getNome() +", Planeta inexistente na API SWAPI.");
+        	response.getErrors().add("Não foi possível salvar o Planeta com Nome " + planeta.getNome() +", Planeta inexistente na API SWAPI.");
+			return ResponseEntity.badRequest().body(response);
+		}catch (BusinessException be) {
+			response.getErrors().add(be.getMessage());
 			return ResponseEntity.badRequest().body(response);
 		}
 
@@ -101,14 +121,12 @@ public class PlanetaController {
 	
 	@GetMapping(value = "/searchAll")
 	public List<Planeta> consultarPlanetas(){
-		
 		List<Planeta> planetas = null;
 		
 		try{
 			planetas = planetaService.consultarPlanetas();
 		}catch (Exception e) {
-			String message = "Ocorreu um erro ao obter a lista de Planetas.";
-			
+			String message = MSG_ERRO_OBTER_LISTA_PLANETAS;
 			log.error(this.getClass().getName() + ": " + message);
 			log.error(e.getMessage());
 			throw new BusinessException(message);
@@ -119,7 +137,6 @@ public class PlanetaController {
 	
 	@DeleteMapping("/{id}")
 	public ResponseEntity<MensagemResponse> removerPlaneta(@PathVariable Long id) {
-
 		Optional<Planeta> planeta = planetaService.buscarPorId(id);
 		
 		MensagemResponse mensagemResponse = new MensagemResponse();
@@ -129,29 +146,18 @@ public class PlanetaController {
         	planetaService.removerPlaneta(planeta.get());
         	
         	mensagemResponse.setCodigoResponse(200);
-        	mensagemResponse.setMensagem("Planeta excluido com sucesso!");
+        	mensagemResponse.setMensagem(MSG_PLANETA_REMOVIDO_SUCESSO);
         	
         	 return ResponseEntity.ok(mensagemResponse);
            
         } else {
+        	mensagemResponse.setCodigoResponse(1);
         	mensagemResponse.setMensagem(PLANETA_NOT_FIND);
         	return ResponseEntity.ok(mensagemResponse);
         }
     }
 	
-	/**
-	 * Popula um DTO com os dados de um planeta.
-	 * 
-	 * @param planeta
-	 * @return PlanetaDto
-	 */
-	private PlanetaDto converterPlanetaDto(Planeta planeta) {
-		PlanetaDto planetaDto = new PlanetaDto();
-		planetaDto.setId(planeta.getId());
-		planetaDto.setNome(planeta.getNome());
-		planetaDto.setClima(planeta.getClima());
-		planetaDto.setTerreno(planeta.getTerreno());
-		planetaDto.setQuantidadesAparicoes(planeta.getQuantidadesAparicoes());
-		return planetaDto;
+	private boolean validarNomePlaneta(String nomePlaneta){
+		return nomePlaneta.trim().isEmpty() ? true: false;
 	}
 }
