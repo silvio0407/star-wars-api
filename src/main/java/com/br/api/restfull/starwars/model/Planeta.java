@@ -29,6 +29,8 @@ public class Planeta {
 	
 	private String terreno;
 	
+	private Integer quantidadesAparicoes;
+	
 	@ManyToMany
 	@JoinTable(name = "PLANETA_FILME", 
 			joinColumns = @JoinColumn(name = "planeta_id"),

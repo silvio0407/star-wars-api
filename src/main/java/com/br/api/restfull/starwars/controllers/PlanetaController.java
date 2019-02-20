@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.br.api.restfull.starwars.dto.PlanetaDto;
+import com.br.api.restfull.starwars.exception.PlanetaNaoEncontradoException;
 import com.br.api.restfull.starwars.model.Planeta;
 import com.br.api.restfull.starwars.response.Response;
 import com.br.api.restfull.starwars.services.PlanetaService;
@@ -62,13 +63,19 @@ public class PlanetaController {
      */
 	@ResponseBody
     @PostMapping
-    public ResponseEntity<Response<PlanetaDto>> newPlanet(@RequestBody Planeta newPlanet) {
+    public ResponseEntity<Response<PlanetaDto>> adicionarPlaneta(@RequestBody PlanetaDto planetaDto) {
 		
 		Response<PlanetaDto> response = new Response<PlanetaDto>();
 
-        Planeta planeta = planetaService.salvarPlaneta(newPlanet);
+        try {
+        	Planeta planeta = planetaService.salvarPlaneta(planetaDto);
+        	response.setData(converterPlanetaDto(planeta));
+        }catch (PlanetaNaoEncontradoException e) {
+        	response.getErrors().add("Não foi possível salvar o Planeta com Nome " + planetaDto.getNome() +", Planeta inexistente na API SWAPI.");
+			return ResponseEntity.badRequest().body(response);
+		}
 
-        response.setData(this.converterPlanetaDto(planeta));
+        
         return ResponseEntity.ok(response);
     }
 
@@ -80,8 +87,12 @@ public class PlanetaController {
 	 * @return PlanetaDto
 	 */
 	private PlanetaDto converterPlanetaDto(Planeta planeta) {
-		PlanetaDto empresaDto = new PlanetaDto();
-
-		return empresaDto;
+		PlanetaDto planetaDto = new PlanetaDto();
+		planetaDto.setId(planeta.getId());
+		planetaDto.setNome(planeta.getNome());
+		planetaDto.setClima(planeta.getClima());
+		planetaDto.setTerreno(planeta.getTerreno());
+		planetaDto.setQuantidadesAparicoes(planeta.getQuantidadesAparicoes());
+		return planetaDto;
 	}
 }

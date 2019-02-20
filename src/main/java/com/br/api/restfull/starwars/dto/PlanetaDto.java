@@ -12,4 +12,6 @@ public class PlanetaDto {
 	private String clima;
 	
 	private String terreno;
+	
+	private Integer quantidadesAparicoes;
 }

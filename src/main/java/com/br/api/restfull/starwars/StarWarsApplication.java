@@ -10,10 +10,12 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import com.br.api.restfull.starwars.model.Planeta;
 import com.br.api.restfull.starwars.services.PlanetaService;
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import com.mashape.unirest.http.Unirest;
+import org.json.*;
 
 @SpringBootApplication
-public class StarWarsApplication /*implements CommandLineRunner*/ {
+public class StarWarsApplication/* implements CommandLineRunner*/ {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(StarWarsApplication.class);
 	
@@ -33,17 +35,22 @@ public class StarWarsApplication /*implements CommandLineRunner*/ {
 
         for (int i = 1; i <= 10; i++) {
 
-            String planetString = Unirest.get("https://swapi.co/api/planets/{id}")
-                    .routeParam("id", String.valueOf(i))
+            String planetaApi = Unirest.get("https://swapi.co/api/planets/")
+                    .routeParam("name", String.valueOf(i)"Tund")
                     .asJson()
                     .getBody()
                     .toString();
+            
+            JSONObject devMovies = new JSONObject(planetaApi);
+            
+            //obtém o objeto "devmovies"
+            JSONObject filmes = devMovies.getJSONObject("results");
 
-            planeta = new Gson().fromJson(planetString, Planeta.class);
-
-           System.out.println(planetString);
+            planeta = new Gson().fromJson(planetaApi, Planeta.class);
+            
+           System.out.println(planetaApi);
         }
 
-    } */
+    }*/
 	 
 }
