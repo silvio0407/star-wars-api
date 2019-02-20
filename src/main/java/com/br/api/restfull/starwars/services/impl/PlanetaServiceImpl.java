@@ -1,5 +1,6 @@
 package com.br.api.restfull.starwars.services.impl;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.json.JSONArray;
@@ -28,10 +29,18 @@ private static final Logger log = LoggerFactory.getLogger(PlanetaServiceImpl.cla
 	
 	private static final String NOT_FOUND = "0";
 	
+	private static final String MESSAGE_NOT_FOUND = "Não encontrado";
+	
 	@Override
 	public Optional<Planeta> buscarPorNome(String nome) {
 		log.info("Buscando um planeta pelo Nome {}", nome);
 		return Optional.ofNullable(planetaRepository.findByNome(nome));
+	}
+	
+	@Override
+	public Optional<Planeta> buscarPorId(Long id) {
+		log.info("Buscando um planeta pelo ID {}", id);
+		return Optional.ofNullable(planetaRepository.findById(id));
 	}
 
 	@Override
@@ -44,6 +53,18 @@ private static final Logger log = LoggerFactory.getLogger(PlanetaServiceImpl.cla
 		planeta = planetaRepository.save(planeta);
 		
 		return planeta;
+	}
+	
+	@Override
+	public List<Planeta> consultarPlanetas() {
+		List<Planeta> planetas = planetaRepository.findAll();
+		
+		return planetas;
+	}
+	
+	@Override
+	public void removerPlaneta(Planeta planeta) {
+		planetaRepository.delete(planeta);
 	}
 	
 	@Override
@@ -63,7 +84,7 @@ private static final Logger log = LoggerFactory.getLogger(PlanetaServiceImpl.cla
             String count = planetaJson.get("count").toString();
             
             if(NOT_FOUND.equals(count)) {
-            	throw new PlanetaNaoEncontradoException("Não encontrado");
+            	throw new PlanetaNaoEncontradoException(MESSAGE_NOT_FOUND);
             }
             
             JSONArray results = planetaJson.getJSONArray("results");

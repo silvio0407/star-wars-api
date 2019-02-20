@@ -1,5 +1,6 @@
 package com.br.api.restfull.starwars.services;
 
+import java.util.List;
 import java.util.Optional;
 
 import com.br.api.restfull.starwars.dto.PlanetaDto;
@@ -15,7 +16,13 @@ public interface PlanetaService {
 	 */
 	Optional<Planeta> buscarPorNome(String nome);
 	
+	Optional<Planeta> buscarPorId(Long id);
+	
 	Planeta salvarPlaneta(PlanetaDto planeta);
+	
+	List<Planeta> consultarPlanetas();
+	
+	void removerPlaneta(Planeta planeta);
 	
 	Integer verificaPlanetaNaApiSwapi(String nome);
 }
