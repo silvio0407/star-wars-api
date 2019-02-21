@@ -51,7 +51,6 @@ private static final Logger log = LoggerFactory.getLogger(PlanetaServiceImpl.cla
 		
 		if(!verificarDuplicidadeNomePlaneta(planeta.getNome())){
 			Integer aparicoes = verificaPlanetaNaApiSwapi(planeta.getNome());
-			/*Planeta novoPlaneta = converterPlaneta(planetaDto);*/
 			planeta.setQuantidadesAparicoes(aparicoes);
 			
 			planeta = planetaRepository.save(planeta);

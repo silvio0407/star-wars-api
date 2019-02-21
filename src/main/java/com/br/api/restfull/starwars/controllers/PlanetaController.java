@@ -1,8 +1,12 @@
 package com.br.api.restfull.starwars.controllers;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,12 +28,16 @@ import com.br.api.restfull.starwars.exception.PlanetaNaoEncontradoException;
 import com.br.api.restfull.starwars.model.Planeta;
 import com.br.api.restfull.starwars.response.Response;
 import com.br.api.restfull.starwars.services.PlanetaService;
+import com.mashape.unirest.http.Unirest;
+import com.mashape.unirest.http.exceptions.UnirestException;
 
 @RestController
 @RequestMapping("/api/planetas")
 public class PlanetaController {
 	
 	private static final Logger log = LoggerFactory.getLogger(PlanetaController.class);
+	
+	private static final String URI_API_SWAPI = "https://swapi.co/api/planets/";
 
 	private static final String PLANETA_NOT_FIND = "Planeta não localizado!";
 	
@@ -38,6 +46,8 @@ public class PlanetaController {
 	private static final String MSG_NOME_PLANETA_OBRIGATORIO = "Informe um nome para o novo Planeta!";
 	
 	private static final String MSG_ERRO_OBTER_LISTA_PLANETAS = "Ocorreu um erro ao obter a lista de Planetas.";
+	
+	private static final String MSG_ERRO_OBTER_LISTA_PLANETAS_API_SWAPI = "Ocorreu um erro ao obter a lista de Planetas da API SWAPI.";
 	
 	private static final String MSG_CONFLITO_NOME_PLANETA = "Nao é permitido salvar novo planeta com um nome já existente no banco de dados."; 
 
@@ -66,6 +76,12 @@ public class PlanetaController {
 		return ResponseEntity.ok(response);
 	}
 	
+	/**
+	 * Retorna um planeta pelo ID.
+	 * 
+	 * @param id
+	 * @return ResponseEntity<Response<Planeta>>
+	 */
 	@GetMapping(value = "/{id}")
 	public ResponseEntity<Response<Planeta>> buscarPorId(@PathVariable("id") Long id) {
 		log.info("Buscando planeta pelo ID: {}", id);
@@ -84,9 +100,9 @@ public class PlanetaController {
 	
 	
 	 /**
-     * Adicionar Planeta
+     * Adicionar novo Planeta
      *
-     * @param planetaDto dados para o cadastro da solicitação
+     * @param planeta dados para o cadastro da solicitação
      * @return Retorna o Planeta criado
      */
 	@ResponseBody
@@ -119,6 +135,11 @@ public class PlanetaController {
         return ResponseEntity.ok(response);
     }
 	
+	 /**
+     * Consulta todos os planetas criados no banco de dados
+     *
+     * @return Retorna lista de Planetas
+     */
 	@GetMapping(value = "/searchAll")
 	public List<Planeta> consultarPlanetas(){
 		List<Planeta> planetas = null;
@@ -135,6 +156,33 @@ public class PlanetaController {
 		return planetas;
 	}
 	
+	/**
+     * Consulta todos os planetas da API SWAPI
+     *
+     * @return Retorna lista de Planetas da API SWAPI
+     */
+	@GetMapping(value = "/searchAllPlanetasApiSwapi")
+	public List<PlanetaDto> consultarPlanetaApiSwapi(){
+		List<PlanetaDto> planetas = null;
+		
+		try{
+			planetas = listarPlanetaApiSwapi();
+		}catch (Exception e) {
+			String message = MSG_ERRO_OBTER_LISTA_PLANETAS_API_SWAPI;
+			log.error(this.getClass().getName() + ": " + message);
+			log.error(e.getMessage());
+			throw new BusinessException(message);
+		}
+		
+		return planetas;
+	}
+	
+	/**
+     * Remove planeta pelo ID do banco de dados
+     * 
+     * @param id do planeta
+     * @return Retorna mensagem response
+     */
 	@DeleteMapping("/{id}")
 	public ResponseEntity<MensagemResponse> removerPlaneta(@PathVariable Long id) {
 		Optional<Planeta> planeta = planetaService.buscarPorId(id);
@@ -157,7 +205,75 @@ public class PlanetaController {
         }
     }
 	
+	/**
+     * Valida o nome do planeta informado
+     * 
+     * @param nome planeta
+     * @return boolean TRUE or FALSE
+     */
 	private boolean validarNomePlaneta(String nomePlaneta){
 		return nomePlaneta.trim().isEmpty() ? true: false;
+	}
+	
+	/**
+     * Método responsavel por acessar a API SWAPI e retornar todos os Planetas
+     * 
+     * @return List<PlanetaDto> 
+     */
+	private List<PlanetaDto> listarPlanetaApiSwapi(){
+		
+		String urlApiSwapi = URI_API_SWAPI;
+		
+		List<PlanetaDto> planetas = new ArrayList<>();
+		
+		boolean hasNextPage = true;
+		try {
+			
+			while(hasNextPage){
+				
+				String planetasApi = Unirest.get(urlApiSwapi)
+				        .asJson()
+				        .getBody()
+				        .toString();
+				
+				JSONObject planetaJson = new JSONObject(planetasApi);
+				
+				urlApiSwapi = planetaJson.get("next").toString();
+				
+				hasNextPage = hasMorePage(urlApiSwapi);
+				
+				JSONArray results = planetaJson.getJSONArray("results");
+				
+				for(int i = 0; i < results.length(); i++ ){
+					JSONObject resultJsonObject = results.getJSONObject(i);
+					
+					PlanetaDto planetaDto = new PlanetaDto();
+					planetaDto.setNome(resultJsonObject.getString("name"));
+					planetaDto.setClima(resultJsonObject.getString("climate"));
+					planetaDto.setTerreno(resultJsonObject.getString("terrain"));
+					planetaDto.setQuantidadesAparicoes(resultJsonObject.getJSONArray("films").length());
+					
+					planetas.add(planetaDto);
+				}
+			}
+			
+		} catch (UnirestException |  JSONException e) {
+			log.error(this.getClass().getName() + ": " + e.getMessage());
+		}
+		
+		return planetas;
+	}
+	
+	/**
+     * Valida se na consulta da API se existe paginação
+     * 
+     * @param nextPag com os dados da API
+     * @return boolean TRUE or FALSE
+     */
+	private boolean hasMorePage(String nextPag){
+		if("null".equals(nextPag)) {
+			return false;
+		}
+		return true;
 	}
 }

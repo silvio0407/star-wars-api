@@ -5,8 +5,6 @@ import lombok.Data;
 @Data
 public class PlanetaDto {
 
-	private Long id;
-	
 	private String nome;
 	
 	private String clima;
